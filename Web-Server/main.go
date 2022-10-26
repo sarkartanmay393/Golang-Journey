@@ -4,46 +4,26 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 )
 
-func formHandler(w http.ResponseWriter, r *http.Request) {
-	if err := r.ParseForm(); err != nil {
-		fmt.Fprintf(w, "ParseForm() err: %v", err)
-		return
-	}
+// By default, we choose 8080.
+var portNumber = "8080"
 
-	fmt.Fprintln(w, "POST request successful")
-	name := r.FormValue("name")
-	address := r.FormValue("address")
-
-	fmt.Fprintf(w, "Name : %s\n", name)
-	fmt.Fprintf(w, "Address : %s\n", address)
-}
-
-func helloHandler(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/hello" {
-		http.Error(w, "404 Not Found", http.StatusNotFound)
-		return
-	}
-
-	if r.Method != "GET" {
-		http.Error(w, "Method isn't supported", http.StatusNotFound)
-		return
-	}
-
-	fmt.Fprintf(w, "Hello!")
-}
-
+// main creates a very simple web server that serve html from static directory.
 func main() {
+	// heroku provides open port by environment variable.
+	portNumber, found := os.LookupEnv("PORT")
+	if !found {
+		log.Fatalf("Port env not found !")
+	}
 
 	fileServer := http.FileServer(http.Dir("./static"))
 	http.Handle("/", fileServer)
-	http.HandleFunc("/hello", helloHandler)
-	http.HandleFunc("/form", formHandler)
 
 	fmt.Println("Starting server at port 8080")
-	if err := http.ListenAndServe(":8080", nil); err != nil {
+	err := http.ListenAndServe(fmt.Sprintf(":%v", portNumber), nil)
+	if err != nil {
 		log.Fatal(err)
 	}
-
 }
